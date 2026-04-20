@@ -292,6 +292,86 @@
     background: #fef2f2;
   }
 
+  .note-edit {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .note-edit:hover {
+    color: var(--primary);
+    background: var(--primary-light);
+  }
+
+  .edit-panel {
+    display: none;
+    margin-bottom: 12px;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .edit-panel.visible {
+    display: block;
+  }
+
+  .edit-panel textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    color: var(--text);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .edit-panel textarea:focus {
+    outline: none;
+  }
+
+  .edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .edit-actions button {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-edit-cancel {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-edit-cancel:hover {
+    border-color: var(--text-muted);
+  }
+
+  .btn-edit-save {
+    background: var(--primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+  }
+
+  .btn-edit-save:hover {
+    background: var(--primary-dark);
+  }
+
   .note-tags {
     display: flex;
     flex-wrap: wrap;
@@ -1194,10 +1274,18 @@ function renderNotes() {
           <span class="note-time">${note.time}</span>
           <div style="display:flex;align-items:center;gap:8px">
             ${note.rawInput ? `<span class="raw-input-toggle" onclick="toggleRaw(${note.id})">&#9998; 原始输入</span>` : ''}
+            <button class="note-edit" onclick="toggleEdit(${note.id})" title="编辑">&#9998;</button>
             <button class="note-delete" onclick="deleteNote(${note.id})" title="删除">&times;</button>
           </div>
         </div>
         <div class="raw-input-panel" id="raw-${note.id}">${note.rawInput ? escapeHtml(note.rawInput) : ''}</div>
+        <div class="edit-panel" id="edit-${note.id}">
+          <textarea id="edit-input-${note.id}">${note.rawInput || note.content}</textarea>
+          <div class="edit-actions">
+            <button class="btn-edit-cancel" onclick="toggleEdit(${note.id})">取消</button>
+            <button class="btn-edit-save" onclick="saveEdit(${note.id})">重新 Flow</button>
+          </div>
+        </div>
         <div class="note-tags">
           ${note.tags.map(t => {
             const c = getTagColor(t);
@@ -1358,6 +1446,33 @@ function deleteNote(id) {
 function toggleRaw(id) {
   const panel = document.getElementById('raw-' + id);
   panel.classList.toggle('visible');
+}
+
+function toggleEdit(id) {
+  const panel = document.getElementById('edit-' + id);
+  panel.classList.toggle('visible');
+}
+
+async function saveEdit(id) {
+  const input = document.getElementById('edit-input-' + id);
+  const text = input.value.trim();
+  if (!text) return;
+
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+
+  const tags = matchTags(text);
+  const structured = structureContent(text);
+  const annotationData = getAnnotation(tags);
+
+  note.rawInput = text;
+  note.tags = tags;
+  note.content = structured;
+  note.annotation = annotationData.text;
+  note.links = annotationData.links;
+
+  saveNotes();
+  render();
 }
 
 async function processNote() {
