@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoteFlow - AI 智能笔记</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --primary: #6366f1;
+    --primary-light: #eef2ff;
+    --primary-dark: #4f46e5;
+    --ai-bg: #f0f4ff;
+    --ai-border: #c7d2fe;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+  }
+
+  .logo h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .logo p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .stats span {
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  /* Main layout */
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Input area */
+  .input-section {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 8px;
+  }
+
+  .input-section textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    transition: border-color 0.2s;
+    color: var(--text);
+  }
+
+  .input-section textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+
+  .input-section textarea::placeholder {
+    color: #94a3b8;
+  }
+
+  .input-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .input-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .btn-process {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-process:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-process:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-process .spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  .btn-process.loading .spinner { display: block; }
+  .btn-process.loading .btn-text { display: none; }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Note cards */
+  .notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .note-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    animation: fadeInUp 0.4s ease;
+  }
+
+  .note-card.processing {
+    opacity: 0.7;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .note-time {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .note-delete {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .note-delete:hover {
+    color: #ef4444;
+    background: #fef2f2;
+  }
+
+  .note-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .note-content {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+    white-space: pre-wrap;
+  }
+
+  .note-content ul {
+    padding-left: 20px;
+    margin: 6px 0;
+  }
+
+  .note-content li {
+    margin: 4px 0;
+  }
+
+  .ai-annotation {
+    background: var(--ai-bg);
+    border: 1px solid var(--ai-border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .ai-annotation::before {
+    content: "AI 注释";
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    background: var(--ai-bg);
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: 0.5px;
+  }
+
+  .ai-annotation .correction {
+    color: #dc2626;
+    font-weight: 600;
+  }
+
+  .ai-links {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--ai-border);
+    font-size: 12px;
+  }
+
+  .ai-links-title {
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .ai-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    display: block;
+    padding: 2px 0;
+    transition: color 0.2s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ai-links a:hover {
+    color: var(--primary);
+  }
+
+  /* Raw input overlay */
+  .raw-input-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .raw-input-toggle:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .raw-input-panel {
+    display: none;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #92400e;
+    position: relative;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .raw-input-panel.visible {
+    display: block;
+  }
+
+  .raw-input-panel::before {
+    content: "原始输入";
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    background: #fffbeb;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #d97706;
+    letter-spacing: 0.5px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    height: 16px;
+    margin: 8px 0;
+  }
+
+  .skeleton.w60 { width: 60%; }
+  .skeleton.w80 { width: 80%; }
+  .skeleton.w40 { width: 40%; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: sticky;
+    top: 100px;
+  }
+
+  .sidebar-section {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  .sidebar-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag-list .tag {
+    font-size: 13px;
+    padding: 5px 12px;
+  }
+
+  .tag-list .tag.active {
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+
+  .tag-list .tag .tag-count {
+    margin-left: 4px;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+
+  .clear-filter {
+    display: none;
+    margin-top: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .clear-filter:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .clear-filter.visible { display: block; }
+
+  /* Calendar */
+  .calendar {
+    margin-bottom: 4px;
+  }
+
+  .cal-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .cal-nav button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .cal-nav button:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  .cal-nav .cal-month {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+  }
+
+  .cal-weekday {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 4px 0;
+  }
+
+  .cal-day {
+    font-size: 12px;
+    padding: 4px 0;
+    border-radius: 6px;
+    cursor: default;
+    position: relative;
+    color: #94a3b8;
+    transition: all 0.15s;
+  }
+
+  .cal-day.has-notes {
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .cal-day.has-notes:hover {
+    background: var(--primary-light);
+  }
+
+  .cal-day.has-notes::after {
+    content: '';
+    position: absolute;
+    bottom: 1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--primary);
+    opacity: 0.5;
+  }
+
+  .cal-day.selected {
+    background: var(--primary);
+    color: white;
+  }
+
+  .cal-day.selected::after {
+    background: white;
+    opacity: 0.8;
+  }
+
+  .cal-day.in-range {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+  }
+
+  .cal-day.in-range::after {
+    opacity: 0.8;
+  }
+
+  .cal-day.today {
+    box-shadow: inset 0 0 0 1px var(--primary);
+  }
+
+  .cal-day.empty {
+    visibility: hidden;
+  }
+
+  .date-filter-info {
+    font-size: 11px;
+    color: var(--primary);
+    margin-top: 8px;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  .about-section {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .about-section p { margin-bottom: 8px; }
+
+  .about-section .tech-tag {
+    display: inline-block;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin: 2px;
+    color: var(--text-muted);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .main {
+      grid-template-columns: 1fr;
+      padding: 16px;
+    }
+
+    .sidebar {
+      position: static;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .header-inner { flex-direction: column; gap: 8px; }
+    .stats { font-size: 12px; }
+  }
+
+  /* Typewriter animation for AI processing */
+  .typewriter {
+    overflow: hidden;
+    border-right: 2px solid var(--primary);
+    animation: blink 0.7s step-end infinite;
+  }
+
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">N</div>
+      <div>
+        <h1>NoteFlow</h1>
+        <p>记录碎片，AI 帮你补全</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div><span id="note-count">0</span> 条笔记</div>
+      <div><span id="tag-count">0</span> 个 Tag</div>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="content">
+    <div class="input-section">
+      <textarea id="note-input" placeholder="在这里记下你刚学到的东西...&#10;&#10;例如：听播客学到 Agent 评测有三个核心维度：任务完成率、效率和安全性"></textarea>
+      <div class="input-actions">
+        <span class="input-hint">支持任意内容，AI 会自动分类、整理和扩充</span>
+        <button class="btn-process" id="btn-process" onclick="processNote()">
+          <span class="btn-text">Flow it</span>
+          <div class="spinner"></div>
+        </button>
+      </div>
+    </div>
+
+    <div class="notes-list" id="notes-list"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">日历</div>
+      <div class="calendar" id="calendar"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">Tag 索引</div>
+      <div class="tag-list" id="tag-list"></div>
+      <button class="clear-filter" id="clear-filter" onclick="clearAllFilters()">清除所有筛选</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">关于</div>
+      <div class="about-section">
+        <p>NoteFlow 是一个 AI 增强的知识笔记工具。输入任意碎片信息，AI 自动完成：</p>
+        <p>1. 生成语义化 Tag<br>2. 结构化整理内容<br>3. 联网验证并扩充知识</p>
+        <p>核心理念：<strong>capture &rarr; enrich &rarr; retrieve</strong></p>
+        <div style="margin-top: 12px">
+          <span class="tech-tag">Workflow 架构</span>
+          <span class="tech-tag">NLP 分类</span>
+          <span class="tech-tag">知识增强</span>
+          <span class="tech-tag">localStorage</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+// ===== Tag color palette =====
+const TAG_COLORS = [
+  { bg: '#eef2ff', text: '#4f46e5' },
+  { bg: '#f0fdf4', text: '#16a34a' },
+  { bg: '#fef3c7', text: '#d97706' },
+  { bg: '#fce7f3', text: '#db2777' },
+  { bg: '#e0f2fe', text: '#0284c7' },
+  { bg: '#f3e8ff', text: '#9333ea' },
+  { bg: '#ffe4e6', text: '#e11d48' },
+  { bg: '#ecfccb', text: '#65a30d' },
+  { bg: '#e0e7ff', text: '#4338ca' },
+  { bg: '#fef9c3', text: '#a16207' },
+];
+
+const tagColorMap = {};
+
+function getTagColor(tag) {
+  if (!tagColorMap[tag]) {
+    const idx = Object.keys(tagColorMap).length % TAG_COLORS.length;
+    tagColorMap[tag] = TAG_COLORS[idx];
+  }
+  return tagColorMap[tag];
+}
+
+// ===== AI Processing Rules =====
+const TAG_RULES = [
+  { keywords: ['agent', 'Agent', 'agent评测', '评测', '评估', 'benchmark', 'evaluation'], tag: 'agent-eval' },
+  { keywords: ['RAG', 'rag', '检索增强', '向量', 'embedding', '检索', 'retrieval'], tag: 'RAG' },
+  { keywords: ['workflow', 'Workflow', '工作流', 'agent vs', 'Agent vs'], tag: '架构选型' },
+  { keywords: ['面试', '自我介绍', 'STAR', '面经', '回答'], tag: '面试技巧' },
+  { keywords: ['产品', 'PM', '北极星', '指标', '用户', '需求', 'PRD'], tag: '产品思维' },
+  { keywords: ['prompt', 'Prompt', '提示词', 'few-shot', 'CoT', 'chain of thought'], tag: 'prompt-engineering' },
+  { keywords: ['合成数据', 'synthetic', 'self-instruct', 'evol-instruct', '数据蒸馏', '数据生成'], tag: '合成数据' },
+  { keywords: ['播客', 'podcast', '文章', '论文', 'paper', '学习'], tag: '学习资源' },
+  { keywords: ['Claude', 'claude', 'Claude Code', 'Cursor', 'Codex', 'vibe coding'], tag: 'AI-工具' },
+  { keywords: ['RLHF', 'rlhf', 'reward', 'PPO', 'DPO', '强化学习', '人类反馈'], tag: 'RLHF' },
+  { keywords: ['token', 'Token', 'tokenizer', '上下文', 'context window', '上下文窗口'], tag: 'LLM基础' },
+  { keywords: ['微调', 'fine-tune', 'fine-tuning', 'LoRA', 'SFT'], tag: '微调' },
+];
+
+const AI_ANNOTATIONS = {
+  'agent-eval': {
+    text: 'Agent 评测是当前 AI 行业的热点方向。业界常用的评测框架包括 SWE-bench（代码任务）、WebArena（网页操作）和 GAIA（通用助手）。评测维度通常分为三层：任务完成率（功能正确性）、效率指标（Token 消耗、交互轮次、延迟）和安全性（权限控制、数据泄露风险）。值得注意的是，离线 Benchmark 和真实用户场景之间往往存在较大 gap，因此线上 A/B 测试和 Bad Case 分析同样重要。',
+    links: [
+      { title: 'SWE-bench: 代码 Agent 评测基准', url: 'https://www.swebench.com/' },
+      { title: 'WebArena: 网页操作 Agent 评测', url: 'https://webarena.dev/' },
+      { title: 'GAIA Benchmark (Hugging Face)', url: 'https://huggingface.co/gaia-benchmark' },
+    ]
+  },
+  'RAG': {
+    text: 'RAG（Retrieval-Augmented Generation，检索增强生成）的标准流程是：文档切分（Chunking）→ 向量化（Embedding）→ 存入向量数据库 → 相似度检索（Retrieval）→ 上下文拼接后由 LLM 生成回答。关键优化点包括：Chunk 大小和重叠策略、Query 改写提升检索召回率、Reranker 重排序提升精度、以及 Hybrid Search（向量 + 关键词混合检索）。',
+    links: [
+      { title: 'LangChain RAG 教程', url: 'https://python.langchain.com/docs/tutorials/rag/' },
+      { title: 'RAG 论文 (Lewis et al., 2020)', url: 'https://arxiv.org/abs/2005.11401' },
+    ]
+  },
+  '架构选型': {
+    text: 'Workflow 和 Agent 的核心区别在于执行路径是否由 LLM 动态决定。Workflow 适合流程固定、需要高可控性的场景（如数据处理管道），成本低且结果可预测；Agent 适合需要自主推理和工具调用的场景（如复杂问答、代码生成），灵活但成本高且行为不完全可控。实际产品中常采用混合架构：核心流程用 Workflow 保障稳定性，特定节点嵌入 Agent 处理需要推理的子任务。',
+    links: [
+      { title: 'Anthropic: Building Effective Agents', url: 'https://www.anthropic.com/engineering/building-effective-agents' },
+      { title: 'LangGraph: Workflow + Agent 混合编排', url: 'https://langchain-ai.github.io/langgraph/' },
+    ]
+  },
+  '面试技巧': {
+    text: '回答面试问题的核心原则：先给框架再讲细节（让面试官知道你的思路结构），用 STAR 格式讲经历（Situation-Task-Action-Result），遇到不会的问题用"如果让我来做"过渡后用方法论推理。产品岗侧重用户价值和业务判断，技术岗侧重方案选型和实现细节。',
+    links: []
+  },
+  '产品思维': {
+    text: '产品思维的核心是以用户需求为出发点，通过最小成本验证假设。关键框架包括：AARRR 用户漏斗（获取→激活→留存→收入→推荐）、北极星指标（找到最能反映产品核心价值的单一指标）、KANO 模型（区分基本型/期望型/兴奋型需求）。AI 产品需要额外关注数据飞轮效应和模型能力边界。',
+    links: [
+      { title: 'AARRR 海盗指标详解', url: 'https://www.productplan.com/glossary/aarrr-framework/' },
+    ]
+  },
+  'prompt-engineering': {
+    text: 'Prompt Engineering 的核心技巧包括：Few-shot（提供示例）、CoT / Chain of Thought（引导逐步推理）、角色设定（System Prompt）、输出格式约束（JSON/XML）。进阶技巧有 Self-Consistency（多次采样取一致答案）和 ReAct（推理 + 行动交替）。Prompt 设计本质是"上下文工程"——决定什么信息在什么时候以什么形式呈现给模型。',
+    links: [
+      { title: 'Anthropic Prompt Engineering 指南', url: 'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview' },
+      { title: 'OpenAI Prompt Engineering 最佳实践', url: 'https://platform.openai.com/docs/guides/prompt-engineering' },
+    ]
+  },
+  '合成数据': {
+    text: '合成数据（Synthetic Data）是当前大模型训练的关键技术。主要方法包括：Self-Instruct（模型自生成指令-回答对）、Evol-Instruct（渐进式增加指令复杂度，WizardLM 提出）、数据蒸馏（用强模型生成数据训练弱模型）。核心挑战是多样性和质量的平衡——生成容易，但去重、去污染和质量筛选是关键。',
+    links: [
+      { title: 'Self-Instruct 论文', url: 'https://arxiv.org/abs/2212.10560' },
+      { title: 'WizardLM / Evol-Instruct 论文', url: 'https://arxiv.org/abs/2304.12244' },
+    ]
+  },
+  '学习资源': {
+    text: '这是一个有价值的学习发现。AI 生成的播客（如 NotebookLM 的 Audio Overview 功能）是 2024-2025 年兴起的新形式，通过将论文/文档转化为两人对谈的音频，降低了学术内容的理解门槛。这种形式的优势是利用碎片时间，但局限在于 AI 可能简化或遗漏原文的关键细节。',
+    links: [
+      { title: 'Google NotebookLM', url: 'https://notebooklm.google.com/' },
+    ]
+  },
+  'AI-工具': {
+    text: 'Code Agent 工具是 2025 年 AI 领域最热的方向之一。Claude Code（Anthropic）、Cursor（Anysphere）和 Codex CLI（OpenAI）代表三种不同的产品形态：终端原生、IDE 集成和命令行工具。它们的共同点是将 LLM 嵌入开发工作流，核心差异在于交互模式和自主性程度。',
+    links: [
+      { title: 'Claude Code 文档', url: 'https://docs.anthropic.com/en/docs/claude-code/overview' },
+      { title: 'Cursor 官网', url: 'https://www.cursor.com/' },
+    ]
+  },
+  'RLHF': {
+    text: 'RLHF（Reinforcement Learning from Human Feedback，基于人类反馈的强化学习）是让 LLM 对齐人类偏好的核心技术。标准流程：SFT 预训练 → 人类标注偏好数据 → 训练 Reward Model → PPO 优化策略。DPO（Direct Preference Optimization）是更新的替代方案，省去了单独训练 Reward Model 的步骤。',
+    links: [
+      { title: 'InstructGPT / RLHF 论文', url: 'https://arxiv.org/abs/2203.02155' },
+      { title: 'DPO 论文', url: 'https://arxiv.org/abs/2305.18290' },
+    ]
+  },
+  'LLM基础': {
+    text: 'Token 是 LLM 处理文本的基本单位，中文大约 1.5-2 个字符对应一个 Token。上下文窗口（Context Window）决定了模型能"看到"多少内容，主流模型已从 4K 扩展到 128K-1M。上下文工程（Context Engineering）的核心问题是：在有限窗口内，什么信息应该常驻、什么按需加载。',
+    links: [
+      { title: 'OpenAI Tokenizer 可视化工具', url: 'https://platform.openai.com/tokenizer' },
+    ]
+  },
+  '微调': {
+    text: '微调（Fine-tuning）是在预训练模型基础上用特定数据继续训练。LoRA（Low-Rank Adaptation）通过低秩矩阵分解大幅降低了微调的算力需求。选择微调 vs RAG 的关键：数据格式是否统一、是否需要改变模型的"行为风格"、数据更新频率。频繁更新的知识用 RAG，稳定的专业能力用微调。',
+    links: [
+      { title: 'LoRA 论文', url: 'https://arxiv.org/abs/2106.09685' },
+    ]
+  },
+};
+
+function matchTags(text) {
+  const matched = new Set();
+  TAG_RULES.forEach(rule => {
+    if (rule.keywords.some(kw => text.includes(kw))) {
+      matched.add(rule.tag);
+    }
+  });
+  if (matched.size === 0) matched.add('随记');
+  return Array.from(matched).slice(0, 3);
+}
+
+function getAnnotation(tags) {
+  for (const tag of tags) {
+    if (AI_ANNOTATIONS[tag]) return AI_ANNOTATIONS[tag];
+  }
+  return { text: '这条笔记已记录。建议在后续学习中结合具体场景进一步深化理解，并尝试用自己的话复述核心要点以加强记忆。', links: [] };
+}
+
+function structureContent(text) {
+  const lines = text.split(/[。；;！!？?\n]+/).filter(l => l.trim());
+  if (lines.length <= 2) return text.trim();
+  return lines.map(l => l.trim()).filter(l => l).map(l => '- ' + l).join('\n');
+}
+
+// ===== Data =====
+let notes = JSON.parse(localStorage.getItem('noteflow_notes') || '[]');
+let activeFilter = null;
+let dateStart = null;   // 'YYYY-MM-DD' or null
+let dateEnd = null;     // 'YYYY-MM-DD' or null (same as start for single day)
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+
+// Seed example notes if empty or old format (no rawInput)
+if (notes.length === 0 || (notes.length > 0 && !notes[0].rawInput)) {
+  notes = [
+    {
+      id: 1,
+      time: '2026-04-18 22:15',
+      tags: ['agent-eval', '面试技巧'],
+      rawInput: '听播客学到agent评测有三个核心维度，任务完成率、效率（轮次和token消耗）还有安全性',
+      content: 'Agent 评测的三个核心维度：\n- 任务完成率（Task Completion Rate）：Agent 能否正确完成目标任务\n- 效率：交互轮次、Token 消耗、响应延迟\n- 安全性：权限控制、数据隐私、异常行为处理',
+      annotation: AI_ANNOTATIONS['agent-eval'].text,
+      links: AI_ANNOTATIONS['agent-eval'].links,
+      source: '来源：AI 播客（论文讲解）'
+    },
+    {
+      id: 2,
+      time: '2026-04-18 23:00',
+      tags: ['RAG'],
+      rawInput: 'RAG的流程大概是：先把文档切块，然后变成向量存起来，用户问问题的时候去检索相关的块，最后拼到prompt里让LLM回答',
+      content: 'RAG（Retrieval-Augmented Generation，检索增强生成）五步流程：\n- 文档切分（Chunking）：按语义或固定长度分块，注意重叠（overlap）\n- 向量化（Embedding）：将文本块转为向量表示\n- 向量存储：存入向量数据库（如 Milvus、Pinecone）\n- 相似度检索（Retrieval）：用户 Query 向量化后检索 Top-K 相关块\n- 生成（Generation）：将检索结果拼入 Prompt，由 LLM 生成最终回答',
+      annotation: AI_ANNOTATIONS['RAG'].text,
+      links: AI_ANNOTATIONS['RAG'].links,
+      source: ''
+    },
+    {
+      id: 3,
+      time: '2026-04-19 14:30',
+      tags: ['架构选型', '产品思维'],
+      rawInput: 'workflow和agent的区别：workflow是固定流程走完，agent是让LLM自己决定下一步干嘛。做产品的时候可以混着用',
+      content: 'Workflow vs Agent 选型决策：\n- Workflow：执行路径固定，每次走相同步骤。可控性高、成本低、结果可预测。适合输入输出明确的流程\n- Agent：执行路径由 LLM 动态决定。灵活但成本高、行为不完全可控。适合需要推理判断的场景\n- 实际产品中可以混用：核心流程用 Workflow，需要推理的节点嵌入 Agent',
+      annotation: AI_ANNOTATIONS['架构选型'].text,
+      links: AI_ANNOTATIONS['架构选型'].links,
+      source: ''
+    },
+    {
+      id: 4,
+      time: '2026-04-19 16:00',
+      tags: ['学习资源', 'AI-工具'],
+      rawInput: '发现了AI播客这个东西，就是用AI把论文翻译成中文然后生成两个人聊天讨论的音频，听着理解论文比自己读方便多了',
+      content: 'AI 生成播客是一种新的知识获取方式：\n- 形式：AI 翻译论文/文档 + AI 生成两人对谈风格的音频\n- 优势：将学术论文转化为易理解的对话，适合碎片化学习（通勤、运动时听）\n- 代表产品：Google NotebookLM 的 Audio Overview 功能\n- 局限：AI 可能简化关键细节，不能完全替代精读原文',
+      annotation: AI_ANNOTATIONS['学习资源'].text,
+      links: AI_ANNOTATIONS['学习资源'].links,
+      source: '来源：个人体验'
+    },
+  ];
+  saveNotes();
+}
+
+function saveNotes() {
+  localStorage.setItem('noteflow_notes', JSON.stringify(notes));
+}
+
+// ===== Rendering =====
+function render() {
+  renderCalendar();
+  renderNotes();
+  renderTags();
+  updateStats();
+}
+
+function getNoteDateStr(note) {
+  // Extract 'YYYY-MM-DD' from note.time like '2026-04-19 14:30'
+  return note.time.split(' ')[0];
+}
+
+function filterNotes() {
+  let result = notes;
+  if (activeFilter) {
+    result = result.filter(n => n.tags.includes(activeFilter));
+  }
+  if (dateStart) {
+    const start = dateStart;
+    const end = dateEnd || dateStart;
+    result = result.filter(n => {
+      const d = getNoteDateStr(n);
+      return d >= start && d <= end;
+    });
+  }
+  return result;
+}
+
+function renderNotes() {
+  const list = document.getElementById('notes-list');
+  const filtered = filterNotes();
+
+  const hasAnyFilter = activeFilter || dateStart;
+  if (filtered.length === 0) {
+    let msg = '还没有笔记，试试在上方输入你学到的东西';
+    if (hasAnyFilter) {
+      const parts = [];
+      if (activeFilter) parts.push('#' + activeFilter);
+      if (dateStart) {
+        parts.push(dateStart === dateEnd || !dateEnd ? dateStart : dateStart + ' ~ ' + dateEnd);
+      }
+      msg = '没有找到匹配 ' + parts.join(' + ') + ' 的笔记';
+    }
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">&#128221;</div>
+        <p>${msg}</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered
+    .slice()
+    .reverse()
+    .map(note => {
+      const linksHtml = (note.links && note.links.length > 0)
+        ? `<div class="ai-links">
+            <div class="ai-links-title">延伸阅读</div>
+            ${note.links.map(l => `<a href="${l.url}" target="_blank" rel="noopener">${escapeHtml(l.title)}</a>`).join('')}
+           </div>`
+        : '';
+
+      const rawHtml = note.rawInput
+        ? `<div class="raw-input-toggle" onclick="toggleRaw(${note.id})">
+            <span>&#9998;</span> 查看原始输入
+           </div>
+           <div class="raw-input-panel" id="raw-${note.id}">${escapeHtml(note.rawInput)}</div>`
+        : '';
+
+      return `
+      <div class="note-card" data-id="${note.id}">
+        <div class="note-header">
+          <span class="note-time">${note.time}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${note.rawInput ? `<span class="raw-input-toggle" onclick="toggleRaw(${note.id})">&#9998; 原始输入</span>` : ''}
+            <button class="note-delete" onclick="deleteNote(${note.id})" title="删除">&times;</button>
+          </div>
+        </div>
+        <div class="raw-input-panel" id="raw-${note.id}">${note.rawInput ? escapeHtml(note.rawInput) : ''}</div>
+        <div class="note-tags">
+          ${note.tags.map(t => {
+            const c = getTagColor(t);
+            return `<span class="tag" style="background:${c.bg};color:${c.text}" onclick="filterByTag('${t}')">#${t}</span>`;
+          }).join('')}
+        </div>
+        <div class="note-content">${escapeHtml(note.content)}</div>
+        ${note.source ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">${escapeHtml(note.source)}</div>` : ''}
+        <div class="ai-annotation">
+          ${escapeHtml(note.annotation)}${linksHtml}
+        </div>
+      </div>
+    `}).join('');
+}
+
+function renderTags() {
+  const tagCounts = {};
+  notes.forEach(n => n.tags.forEach(t => {
+    tagCounts[t] = (tagCounts[t] || 0) + 1;
+  }));
+
+  const tagList = document.getElementById('tag-list');
+  const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+
+  tagList.innerHTML = sorted.map(([tag, count]) => {
+    const c = getTagColor(tag);
+    const active = activeFilter === tag ? ' active' : '';
+    return `<span class="tag${active}" style="background:${c.bg};color:${c.text}" onclick="filterByTag('${tag}')">#${tag}<span class="tag-count">${count}</span></span>`;
+  }).join('');
+
+  document.getElementById('clear-filter').className =
+    'clear-filter' + ((activeFilter || dateStart) ? ' visible' : '');
+}
+
+// ===== Calendar =====
+function renderCalendar() {
+  const cal = document.getElementById('calendar');
+  const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+
+  // Collect dates that have notes
+  const noteDates = new Set();
+  notes.forEach(n => noteDates.add(getNoteDateStr(n)));
+
+  let html = `
+    <div class="cal-nav">
+      <button onclick="changeMonth(-1)">&lsaquo;</button>
+      <span class="cal-month">${calYear}年 ${monthNames[calMonth]}</span>
+      <button onclick="changeMonth(1)">&rsaquo;</button>
+    </div>
+    <div class="cal-grid">
+      ${weekdays.map(d => `<div class="cal-weekday">${d}</div>`).join('')}
+  `;
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="cal-day empty"></div>';
+  }
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const hasNotes = noteDates.has(dateStr);
+    const isToday = dateStr === todayStr;
+
+    let cls = 'cal-day';
+    if (hasNotes) cls += ' has-notes';
+    if (isToday) cls += ' today';
+
+    // Selection states
+    if (dateStart && dateStr === dateStart) cls += ' selected';
+    else if (dateEnd && dateStr === dateEnd) cls += ' selected';
+    else if (dateStart && dateEnd && dateStr > dateStart && dateStr < dateEnd) cls += ' in-range';
+
+    const onclick = hasNotes ? ` onclick="selectDate('${dateStr}')"` : '';
+    html += `<div class="${cls}"${onclick}>${d}</div>`;
+  }
+
+  html += '</div>';
+
+  // Date filter info
+  if (dateStart) {
+    const label = (!dateEnd || dateStart === dateEnd)
+      ? dateStart
+      : dateStart + ' ~ ' + dateEnd;
+    html += `<div class="date-filter-info">${label}</div>`;
+  }
+
+  cal.innerHTML = html;
+}
+
+function changeMonth(delta) {
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+}
+
+function selectDate(dateStr) {
+  if (!dateStart || (dateStart && dateEnd)) {
+    // No selection or both set → start new selection
+    dateStart = dateStr;
+    dateEnd = null;
+  } else if (dateStart === dateStr) {
+    // Click same date → deselect
+    dateStart = null;
+    dateEnd = null;
+  } else {
+    // Second click → set range
+    dateEnd = dateStr;
+    // Ensure start <= end
+    if (dateStart > dateEnd) {
+      [dateStart, dateEnd] = [dateEnd, dateStart];
+    }
+  }
+  render();
+}
+
+function updateStats() {
+  document.getElementById('note-count').textContent = notes.length;
+  const allTags = new Set();
+  notes.forEach(n => n.tags.forEach(t => allTags.add(t)));
+  document.getElementById('tag-count').textContent = allTags.size;
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+}
+
+// ===== Actions =====
+function filterByTag(tag) {
+  activeFilter = activeFilter === tag ? null : tag;
+  render();
+}
+
+function clearAllFilters() {
+  activeFilter = null;
+  dateStart = null;
+  dateEnd = null;
+  render();
+}
+
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  saveNotes();
+  render();
+}
+
+function toggleRaw(id) {
+  const panel = document.getElementById('raw-' + id);
+  panel.classList.toggle('visible');
+}
+
+async function processNote() {
+  const input = document.getElementById('note-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('btn-process');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  // Show skeleton card
+  const list = document.getElementById('notes-list');
+  const skeleton = document.createElement('div');
+  skeleton.className = 'note-card processing';
+  skeleton.innerHTML = `
+    <div class="skeleton w40"></div>
+    <div style="display:flex;gap:6px;margin:12px 0">
+      <div class="skeleton" style="width:60px;height:24px;border-radius:20px"></div>
+      <div class="skeleton" style="width:50px;height:24px;border-radius:20px"></div>
+    </div>
+    <div class="skeleton w80"></div>
+    <div class="skeleton w60"></div>
+    <div class="skeleton w80" style="margin-top:16px"></div>
+  `;
+  list.insertBefore(skeleton, list.firstChild);
+
+  // Simulate AI processing
+  await sleep(800);
+
+  const tags = matchTags(text);
+  const structured = structureContent(text);
+  const annotationData = getAnnotation(tags);
+  const now = new Date();
+  const timeStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  await sleep(700);
+
+  const note = {
+    id: Date.now(),
+    time: timeStr,
+    tags,
+    rawInput: text,
+    content: structured,
+    annotation: annotationData.text,
+    links: annotationData.links,
+    source: ''
+  };
+
+  notes.push(note);
+  saveNotes();
+
+  // Remove skeleton
+  skeleton.remove();
+
+  // Clear and render
+  input.value = '';
+  btn.classList.remove('loading');
+  btn.disabled = false;
+  render();
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function pad(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
