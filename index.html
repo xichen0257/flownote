@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NoteFlow - AI 智能笔记</title>
+<title>NoteFlow - 思维跳跃不是问题，漏掉才是</title>
+<meta name="description" content="NoteFlow 是一个 AI 增强的知识笔记工具。低摩擦记录碎片信息，AI 自动整理、补充、归类。为注意力分散的学习者设计。">
+<meta property="og:title" content="NoteFlow - AI 智能笔记">
+<meta property="og:description" content="思维跳跃不是问题，漏掉才是。低摩擦记录，AI 自动整理扩充。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://xichen0257.github.io/noteflow/">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>N</text></svg>">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -627,6 +633,16 @@
     opacity: 0.5;
   }
 
+  .empty-state p {
+    margin-bottom: 8px;
+  }
+
+  .empty-state .empty-hint {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 12px;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .main {
@@ -735,7 +751,7 @@
     <div class="input-section">
       <textarea id="note-input" placeholder="在这里记下你刚学到的东西...&#10;&#10;不用在意格式，想到什么写什么。AI 会帮你整理、补充、归类。"></textarea>
       <div class="input-actions">
-        <span class="input-hint">支持任意内容，AI 会自动分类、整理和扩充</span>
+        <span class="input-hint">支持任意内容，AI 自动分类、整理和扩充 · <kbd style="background:#e2e8f0;padding:1px 5px;border-radius:3px;font-size:11px">Ctrl+Enter</kbd></span>
         <button class="btn-process" id="btn-process" onclick="processNote()">
           <span class="btn-text">Flow it</span>
           <div class="spinner"></div>
@@ -1369,6 +1385,14 @@ function pad(n) {
 
 // Initial render
 render();
+
+// Keyboard shortcut: Ctrl+Enter or Cmd+Enter to submit
+document.getElementById('note-input').addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    processNote();
+  }
+});
 </script>
 </body>
 </html>
