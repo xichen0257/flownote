@@ -822,14 +822,18 @@ const TAG_RULES = [
   { keywords: ['RAG', 'rag', '检索增强', '向量', 'embedding', '检索', 'retrieval'], tag: 'RAG' },
   { keywords: ['workflow', 'Workflow', '工作流', 'agent vs', 'Agent vs'], tag: '架构选型' },
   { keywords: ['面试', '自我介绍', 'STAR', '面经', '回答'], tag: '面试技巧' },
-  { keywords: ['产品', 'PM', '北极星', '指标', '用户', '需求', 'PRD'], tag: '产品思维' },
+  { keywords: ['产品', 'PM', '北极星', '指标', '用户', '需求', 'PRD', '留存', '转化'], tag: '产品思维' },
   { keywords: ['prompt', 'Prompt', '提示词', 'few-shot', 'CoT', 'chain of thought'], tag: 'prompt-engineering' },
   { keywords: ['合成数据', 'synthetic', 'self-instruct', 'evol-instruct', '数据蒸馏', '数据生成'], tag: '合成数据' },
-  { keywords: ['播客', 'podcast', '文章', '论文', 'paper', '学习'], tag: '学习资源' },
-  { keywords: ['Claude', 'claude', 'Claude Code', 'Cursor', 'Codex', 'vibe coding'], tag: 'AI-工具' },
+  { keywords: ['播客', 'podcast', '文章', '论文', 'paper', '学习', '读书'], tag: '学习资源' },
+  { keywords: ['Claude', 'claude', 'Claude Code', 'Cursor', 'Codex', 'vibe coding', 'code agent'], tag: 'AI-工具' },
   { keywords: ['RLHF', 'rlhf', 'reward', 'PPO', 'DPO', '强化学习', '人类反馈'], tag: 'RLHF' },
   { keywords: ['token', 'Token', 'tokenizer', '上下文', 'context window', '上下文窗口'], tag: 'LLM基础' },
   { keywords: ['微调', 'fine-tune', 'fine-tuning', 'LoRA', 'SFT'], tag: '微调' },
+  { keywords: ['幻觉', 'hallucination', '事实性', 'grounding', '可信'], tag: 'AI-安全' },
+  { keywords: ['多模态', 'multimodal', '图像', '视觉', 'vision', '语音', '音频'], tag: '多模态' },
+  { keywords: ['注意力', '专注', 'ADHD', '碎片', '分心', '效率', '习惯', '时间管理'], tag: '效率方法' },
+  { keywords: ['创业', '商业模式', '融资', '增长', 'PMF', 'product-market fit'], tag: '创业思考' },
 ];
 
 const AI_ANNOTATIONS = {
@@ -911,6 +915,33 @@ const AI_ANNOTATIONS = {
       { title: 'LoRA 论文', url: 'https://arxiv.org/abs/2106.09685' },
     ]
   },
+  'AI-安全': {
+    text: '大模型幻觉（Hallucination）是指模型生成看似合理但实际不准确的内容。主要分为两类：内在幻觉（与输入矛盾）和外在幻觉（无法被输入验证）。缓解方法包括：RAG 提供事实依据、Chain-of-Thought 提升推理准确性、自我一致性检查（Self-Consistency）、以及人类反馈（RLHF）对齐。Grounding 技术通过将模型输出锚定到可验证的数据源来降低幻觉风险。',
+    links: [
+      { title: 'Survey of Hallucination in LLMs', url: 'https://arxiv.org/abs/2311.05232' },
+      { title: 'Anthropic: 模型安全研究', url: 'https://www.anthropic.com/research' },
+    ]
+  },
+  '多模态': {
+    text: '多模态大模型（Multimodal LLM）能够同时处理文本、图像、音频等多种输入。代表模型包括 GPT-4V/o（视觉+文本）、Gemini（原生多模态）、Claude 3.5（视觉理解）。关键技术挑战包括：跨模态对齐（如何让模型理解图文关系）、多模态推理（结合视觉和语言信息做推断）、以及效率优化（多模态 Token 消耗更大）。',
+    links: [
+      { title: 'GPT-4V 技术报告', url: 'https://arxiv.org/abs/2303.08774' },
+      { title: 'Gemini 技术报告', url: 'https://arxiv.org/abs/2312.11805' },
+    ]
+  },
+  '效率方法': {
+    text: '对于注意力容易分散的人，关键不是"提高专注力"而是"降低启动门槛"。有效的策略包括：2 分钟法则（如果一件事 2 分钟能做完就立刻做）、外部化记忆（不依赖大脑记住，而是用工具捕捉）、时间块（Pomodoro 等固定时间段工作法）、环境设计（减少干扰源而非对抗干扰）。ADHD 友好的工具设计核心是：零摩擦输入 + 自动化整理。',
+    links: [
+      { title: 'ADHD 与效率：科学方法综述', url: 'https://www.additudemag.com/focus-strategies/' },
+    ]
+  },
+  '创业思考': {
+    text: 'Product-Market Fit（PMF）是创业成功的第一道门槛，指产品恰好满足了一个真实市场的强烈需求。判断 PMF 的信号包括：用户自发推荐（NPS > 40）、留存曲线趋于平稳、用户会因产品下线而"非常失望"（Sean Ellis 测试）。找到 PMF 之前，核心策略是快速验证假设、最小成本试错。',
+    links: [
+      { title: 'Paul Graham: Do Things That Don\'t Scale', url: 'http://paulgraham.com/ds.html' },
+      { title: 'Lenny\'s Newsletter: PMF 指南', url: 'https://www.lennysnewsletter.com/p/how-to-know-if-youve-got-product' },
+    ]
+  },
 };
 
 function matchTags(text) {
@@ -950,43 +981,73 @@ if (notes.length === 0 || (notes.length > 0 && !notes[0].rawInput)) {
   notes = [
     {
       id: 1,
-      time: '2026-04-18 22:15',
-      tags: ['agent-eval', '面试技巧'],
-      rawInput: '听播客学到agent评测有三个核心维度，任务完成率、效率（轮次和token消耗）还有安全性',
-      content: 'Agent 评测的三个核心维度：\n- 任务完成率（Task Completion Rate）：Agent 能否正确完成目标任务\n- 效率：交互轮次、Token 消耗、响应延迟\n- 安全性：权限控制、数据隐私、异常行为处理',
-      annotation: AI_ANNOTATIONS['agent-eval'].text,
-      links: AI_ANNOTATIONS['agent-eval'].links,
-      source: '来源：AI 播客（论文讲解）'
+      time: '2026-04-14 09:20',
+      tags: ['prompt-engineering', 'RAG'],
+      rawInput: '看到一篇文章说RAG效果不好的时候先别急着加数据，应该先试试改query。用CoT让模型先分析用户问题再去检索，召回率能提升不少',
+      content: 'RAG 优化思路：Query 改写优先于数据扩充\n- 当 RAG 检索效果不理想时，优先优化 Query 端而非扩充数据量\n- 具体方法：用 CoT（Chain of Thought）引导模型先分析用户真实意图，再将改写后的 Query 送入检索\n- 原理：用户原始提问往往过于口语化或模糊，改写后的 Query 更贴合文档的语义空间\n- 进阶：HyDE（Hypothetical Document Embedding）——让 LLM 先生成一个"假设性回答"，用它的向量去检索',
+      annotation: AI_ANNOTATIONS['RAG'].text,
+      links: AI_ANNOTATIONS['RAG'].links,
+      source: '来源：技术博客阅读'
     },
     {
       id: 2,
-      time: '2026-04-18 23:00',
-      tags: ['RAG'],
-      rawInput: 'RAG的流程大概是：先把文档切块，然后变成向量存起来，用户问问题的时候去检索相关的块，最后拼到prompt里让LLM回答',
-      content: 'RAG（Retrieval-Augmented Generation，检索增强生成）五步流程：\n- 文档切分（Chunking）：按语义或固定长度分块，注意重叠（overlap）\n- 向量化（Embedding）：将文本块转为向量表示\n- 向量存储：存入向量数据库（如 Milvus、Pinecone）\n- 相似度检索（Retrieval）：用户 Query 向量化后检索 Top-K 相关块\n- 生成（Generation）：将检索结果拼入 Prompt，由 LLM 生成最终回答',
-      annotation: AI_ANNOTATIONS['RAG'].text,
-      links: AI_ANNOTATIONS['RAG'].links,
-      source: ''
+      time: '2026-04-15 14:45',
+      tags: ['产品思维', '效率方法'],
+      rawInput: '在小红书看到一个观点：好的产品不是让用户养成新习惯，而是把用户已有的行为路径缩短。联想到ADHD友好设计也是这个逻辑——不是让人变专注，而是让不专注也能完成任务',
+      content: '产品设计原则：缩短已有路径 > 创造新习惯\n- 好产品的本质不是教用户新行为，而是让已有行为更省力\n- 类比 ADHD 友好设计：不是"帮用户变得专注"，而是"即使注意力分散也能完成记录"\n- 实践：NoteFlow 的"零格式输入"就是这个理念——用户只管写，AI 负责整理\n- 衡量标准：任务完成的最少步骤数（每多一步就流失一批用户）',
+      annotation: AI_ANNOTATIONS['产品思维'].text,
+      links: AI_ANNOTATIONS['产品思维'].links,
+      source: '来源：小红书'
     },
     {
       id: 3,
-      time: '2026-04-19 14:30',
-      tags: ['架构选型', '产品思维'],
-      rawInput: 'workflow和agent的区别：workflow是固定流程走完，agent是让LLM自己决定下一步干嘛。做产品的时候可以混着用',
-      content: 'Workflow vs Agent 选型决策：\n- Workflow：执行路径固定，每次走相同步骤。可控性高、成本低、结果可预测。适合输入输出明确的流程\n- Agent：执行路径由 LLM 动态决定。灵活但成本高、行为不完全可控。适合需要推理判断的场景\n- 实际产品中可以混用：核心流程用 Workflow，需要推理的节点嵌入 Agent',
-      annotation: AI_ANNOTATIONS['架构选型'].text,
-      links: AI_ANNOTATIONS['架构选型'].links,
+      time: '2026-04-16 20:30',
+      tags: ['agent-eval', 'AI-安全'],
+      rawInput: '面试准备的时候想到一个问题：agent的评测应该怎么处理幻觉？agent自己调用工具产生的错误和模型幻觉导致的错误应该分开统计',
+      content: 'Agent 评测中的幻觉问题需要分层处理：\n- 模型幻觉（Model Hallucination）：LLM 生成了不准确的推理或事实，导致后续 Action 方向错误\n- 工具调用错误（Tool Error）：API 返回异常、格式解析失败等技术性错误\n- 评测应分别统计两类错误，因为优化策略不同：前者需要改 Prompt/模型，后者需要改工程实现\n- 实际做法：在评测日志中标注每个失败案例的 root cause 分类',
+      annotation: AI_ANNOTATIONS['agent-eval'].text,
+      links: AI_ANNOTATIONS['agent-eval'].links,
       source: ''
     },
     {
       id: 4,
-      time: '2026-04-19 16:00',
-      tags: ['学习资源', 'AI-工具'],
-      rawInput: '发现了AI播客这个东西，就是用AI把论文翻译成中文然后生成两个人聊天讨论的音频，听着理解论文比自己读方便多了',
-      content: 'AI 生成播客是一种新的知识获取方式：\n- 形式：AI 翻译论文/文档 + AI 生成两人对谈风格的音频\n- 优势：将学术论文转化为易理解的对话，适合碎片化学习（通勤、运动时听）\n- 代表产品：Google NotebookLM 的 Audio Overview 功能\n- 局限：AI 可能简化关键细节，不能完全替代精读原文',
-      annotation: AI_ANNOTATIONS['学习资源'].text,
-      links: AI_ANNOTATIONS['学习资源'].links,
-      source: '来源：个人体验'
+      time: '2026-04-17 11:00',
+      tags: ['AI-工具', '架构选型'],
+      rawInput: '用Claude Code写了个笔记工具，过程中发现vibe coding的核心不是"不写代码"，而是要知道什么时候该用workflow什么时候该用agent。简单功能直接workflow搞定，复杂推理才用agent',
+      content: 'Vibe Coding 的核心认知：选型判断 > 代码编写\n- Vibe Coding 不是"完全不写代码"，而是把精力从"怎么写"转移到"选什么方案"\n- 关键决策：Workflow vs Agent\n  - 固定流程（如 tag 生成→内容整理→保存）→ Workflow，可控且低成本\n  - 需要推理判断（如"帮我总结本周笔记"）→ Agent，灵活但成本高\n- 实践心得：同一个产品可以混合使用，核心流程 Workflow 保稳定，高阶功能嵌 Agent',
+      annotation: AI_ANNOTATIONS['架构选型'].text,
+      links: AI_ANNOTATIONS['架构选型'].links,
+      source: '来源：个人项目实践'
+    },
+    {
+      id: 5,
+      time: '2026-04-18 08:30',
+      tags: ['学习资源', '多模态'],
+      rawInput: '通勤听了个播客讲多模态模型，说现在主流做法是把图片切成patch然后用ViT编码成token序列，这样就能和文本token一起送进transformer。感觉和RAG把文档切chunk的思路很像',
+      content: '多模态模型的图像处理流程（类比文本处理）：\n- 图像分块（Patch）：将图片切分成固定大小的小块，类似文本的 Chunking\n- ViT 编码：用 Vision Transformer 将每个 Patch 编码为 Token 向量\n- 与文本 Token 拼接：图像 Token 和文本 Token 在同一个序列中被 Transformer 处理\n- 有趣类比：图像 Patch → 文档 Chunk，ViT → Embedding Model，思路一脉相承',
+      annotation: AI_ANNOTATIONS['多模态'].text,
+      links: AI_ANNOTATIONS['多模态'].links,
+      source: '来源：AI 播客'
+    },
+    {
+      id: 6,
+      time: '2026-04-18 22:15',
+      tags: ['面试技巧', 'prompt-engineering'],
+      rawInput: '突然想到面试回答问题和写prompt其实很像，都是要给一个清晰的框架让对方知道你接下来要讲什么。STAR格式就像是给面试官的system prompt',
+      content: '面试回答 ≈ Prompt Engineering 的思路：\n- 共同点：都需要先给出结构化框架，让"接收方"明确预期\n- STAR 格式 ≈ System Prompt：告诉面试官你会按 Situation→Task→Action→Result 来回答\n- "先框架后细节" ≈ Few-shot：先给一句总结（相当于示例），再展开每个点\n- 实用技巧：遇到不会的问题，用"如果让我来做的话..."过渡，然后用方法论推理——这就像 CoT',
+      annotation: AI_ANNOTATIONS['面试技巧'].text,
+      links: AI_ANNOTATIONS['面试技巧'].links,
+      source: ''
+    },
+    {
+      id: 7,
+      time: '2026-04-19 16:40',
+      tags: ['效率方法', '产品思维', '创业思考'],
+      rawInput: '想了下为什么市面上的笔记工具我都用不下去：学习曲线太高。Notion要学数据库概念，Obsidian要懂markdown和双链。对ADHD来说，工具越复杂越不可能坚持用。PMF的关键是不是就在这里——做一个"不需要学"的工具？',
+      content: '笔记工具的 PMF 洞察：学习成本是最大的流失因子\n- 现有产品问题：Notion 需要理解数据库，Obsidian 需要掌握 Markdown 和双链体系\n- 对注意力分散的用户来说，工具复杂度与使用坚持度成反比\n- PMF 假设：一个"不需要学习如何使用"的笔记工具可能有未被满足的市场\n- 设计原则：输入框 + 一个按钮 = 全部交互。AI 承担所有整理工作\n- 验证方式：观察用户是否愿意回来查看之前的笔记（retrieve 环节才是闭环）',
+      annotation: AI_ANNOTATIONS['创业思考'].text,
+      links: AI_ANNOTATIONS['创业思考'].links,
+      source: '来源：个人思考'
     },
   ];
   saveNotes();
